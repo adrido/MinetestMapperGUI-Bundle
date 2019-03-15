@@ -69,6 +69,7 @@ Write-Output "Qt Dir:    $qt_dir"
 Write-Output "Build Dir: $build_dir"
 Write-Output "Triplet:   $triplet"
 Write-Output "Generator: $cmake_generator"
+Write-Output "vcpkg:     $vcpkg_root"
 
 try { 
     & "$vcpkg_root\vcpkg" install zlib sqlite3 libgd[core,png] --triplet "$triplet"
@@ -86,7 +87,7 @@ try {
     cmake ../.. -G"$cmake_generator" `
         -DVCPKG_TARGET_TRIPLET="$triplet" `
         -DVCPKG_APPLOCAL_DEPS=ON `
-        -DCMAKE_TOOLCHAIN_FILE=D:/vcpkg/scripts/buildsystems/vcpkg.cmake `
+        -DCMAKE_TOOLCHAIN_FILE="$vcpkg_root/scripts/buildsystems/vcpkg.cmake" `
         -DCMAKE_BUILD_TYPE=Release `
         -DCMAKE_PREFIX_PATH="$qt_dir\lib\cmake"
     if ($LASTEXITCODE -ne 0) {throw "Error while configuring"}
