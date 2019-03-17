@@ -24,7 +24,10 @@ param (
     [int32]$vs_version = 15,
 
     ## Specify the qt version to use
-    $qt_version = "5.12.1"
+    $qt_version = "5.12.1",
+
+    ## Build a installer instead of a portable version
+    [switch]$installer
 )
 
 $aTriplet = $triplet.Split('-')
@@ -95,11 +98,18 @@ try {
     cmake --build . --config Release
     if ($LASTEXITCODE -ne 0) {throw "Error while building"}
 
-    cpack -G "ZIP"
-    if ($LASTEXITCODE -ne 0) {throw "Error while packing"}
+    if($installer){
+        cpack -G "WIX"
+        if ($LASTEXITCODE -ne 0) {throw "Error while packing Installer"}
+    }
+    else {
+        cpack -G "ZIP"
+        if ($LASTEXITCODE -ne 0) {throw "Error while packing"}
+    }
 }
 catch { 
     Write-Error $_.Exception.Message 
+    exit 1
 }
 Finally {
     Pop-Location

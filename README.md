@@ -1,6 +1,10 @@
 MinetestMapperGUI-Bundle
 ========================
 
+Windows: [![Build status](https://ci.appveyor.com/api/projects/status/c7ms6hu91mirhyn1?svg=true)](https://ci.appveyor.com/project/adrido/minetestmappergui-bundle)
+
+
+
 Contains the Minetestmapper and the MinetestmapperGui as bundle.
 
 Building on Windows
