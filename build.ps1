@@ -86,8 +86,16 @@ try {
     if (Test-Path "CMakeCache.txt") {
         Remove-Item "CMakeCache.txt" # Perform a clean build
     }
+    if($installer) {
+        $portable = "OFF"
+    }
+    else {
+        $portable = "ON"
+    }
 
-    cmake ../.. -G"$cmake_generator" `
+    cmake `
+        -DBUILD_PORTABLE="$portable" `
+        ../.. -G"$cmake_generator" `
         -DVCPKG_TARGET_TRIPLET="$triplet" `
         -DVCPKG_APPLOCAL_DEPS=ON `
         -DCMAKE_TOOLCHAIN_FILE="$vcpkg_root/scripts/buildsystems/vcpkg.cmake" `
