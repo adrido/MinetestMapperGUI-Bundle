@@ -79,7 +79,8 @@ try {
     if ($LASTEXITCODE -ne 0) {throw "Error while installing dependencies"}
 
     if (!(test-path $build_dir)) {
-        New-Item -ItemType Directory -Force -Path $build_dir
+        New-Item -ItemType Directory -Path $build_dir | Out-Null
+
     }
 
     Push-Location $build_dir
