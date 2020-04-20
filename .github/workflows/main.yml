@@ -1,0 +1,105 @@
+# This is a basic workflow to help you get started with Actions
+
+name: CI
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the master branch
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    name: ${{ matrix.config.name }}-${{ matrix.type }}
+    runs-on: ${{ matrix.config.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - {
+              name: "Windows x32",
+              os: windows-latest,
+              cpack_install_generator: -G WIX,
+              generator: "-G'Visual Studio 16 2019' -A Win32",
+              qt_arch: 'win32_msvc2017',
+              vcpkg_cmd: "zlib libpng sqlite3 libgd[core,png] --triplet x86-windows"
+            }
+          - {
+              name: "Windows x64",
+              os: windows-latest,
+              cpack_install_generator: -G WIX,
+              generator: "-G'Visual Studio 16 2019' -A x64",
+              qt_arch: 'win64_msvc2017_64',
+              vcpkg_cmd: "zlib libpng sqlite3 libgd[core,png] --triplet x64-windows"
+            }
+          - { 
+              name: "Ubuntu",
+              os: ubuntu-latest,
+              cpack_install_generator: -G DEB,
+              vcpkg_cmd: "zlib libpng sqlite3 libgd[core,png] --triplet x64-linux"
+            }
+          - {
+              name: "MacOS",
+              os: macos-latest,
+              cpack_install_generator: -G DragNDrop,
+              vcpkg_cmd: "zlib libpng sqlite3 libgd[core,png] --triplet x64-osx"
+          }
+        type: [portable, installer]
+
+    steps:
+      - name: 🐞Fixup chocolately
+        run: Remove-Item -Path $env:ChocolateyInstall\\bin\\cpack.exe -Force
+        shell: pwsh
+        if: "contains(matrix.config.os, 'windows')"
+
+      - name: Checkout
+        uses: actions/checkout@v1
+        with:
+          submodules: true
+      - name: Cache Qt
+        id: cache-qt
+        uses: actions/cache@v1
+        with:
+          path: ../Qt
+          key: ${{ runner.os }}-QtCache-${{matrix.config.qt_arch}}
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v2
+        with:
+          version: 5.12.8
+          arch: ${{matrix.config.qt_arch}}
+          cached: ${{ steps.cache-qt.outputs.cache-hit }}
+          
+      - name: Run vcpkg
+        run: vcpkg install  ${{matrix.config.vcpkg_cmd}}
+
+      - name: CMake
+        run: cmake ${{matrix.config.generator}} -DCMAKE_TOOLCHAIN_FILE="$VCPKG_INSTALLATION_ROOT\scripts\buildsystems\vcpkg.cmake" -DCMAKE_BUILD_TYPE=Release . -DBUILD_PORTABLE=$PORTABLE
+        shell: bash
+        env:
+          PORTABLE: ${{contains(matrix.type, 'portable')}}
+
+      - name: Build
+        run: cmake --build . --config Release
+
+      - name: Package Install
+        run: cpack ${{matrix.config.cpack_install_generator}} -B "$GITHUB_WORKSPACE/Package"
+        if: "!contains(matrix.type, 'portable')"
+        shell: bash
+
+      - name: Package Portable
+        run: |
+          cpack -G ZIP -B "$GITHUB_WORKSPACE/Package"
+          ls $GITHUB_WORKSPACE/Package
+        if: "contains(matrix.type, 'portable')"
+        shell: bash
+
+      - name: Package Clean
+        run: rm -r $GITHUB_WORKSPACE/Package/_CPack_Packages
+        shell: bash
+
+      - uses: actions/upload-artifact@v1
+        with:
+          name: ${{ matrix.config.name }}-${{ matrix.type }}
+          path: ./Package/
