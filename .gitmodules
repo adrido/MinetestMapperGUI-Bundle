@@ -3,4 +3,4 @@
 	url = https://github.com/adrido/minetest-mapper-cpp/
 [submodule "MinetestMapperGUI"]
 	path = MinetestMapperGUI
-	url = https://bitbucket.org/adrido/minetestmappergui/
+	url = https://github.com/adrido/MinetestMapperGUI.git
